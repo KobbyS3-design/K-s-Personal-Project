@@ -1,0 +1,5 @@
+{
+  "name": "NurseFlow",
+  "description": "A minimalist, offline-first medication timing and patient management tool for nurses on the go.",
+  "requestFramePermissions": []
+}
