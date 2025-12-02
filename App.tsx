@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Users, 
@@ -30,7 +29,8 @@ import {
   RefreshCw,
   Ban,
   Zap,
-  Key
+  Key,
+  HeartPulse
 } from 'lucide-react';
 import { 
   Patient, 
@@ -69,7 +69,7 @@ const toLocalISOString = (date: Date) => {
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
         <div className="p-5 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
           <h3 className="text-xl font-bold text-slate-800">{title}</h3>
@@ -605,8 +605,8 @@ export default function App() {
   // --- VIEWS ---
 
   const renderDashboard = () => (
-    <div className="space-y-4 pb-24">
-      <header className="px-4 pt-6 pb-2 flex justify-between items-center">
+    <div className="space-y-4 pb-24 md:pb-10 h-full">
+      <header className="px-4 md:px-8 pt-6 pb-2 flex justify-between items-center">
         <div>
            <h1 className="text-3xl font-bold text-slate-800">Upcoming</h1>
            <p className="text-slate-500">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric'})}</p>
@@ -614,7 +614,7 @@ export default function App() {
         {notificationPermission !== 'granted' && (
             <button 
                 onClick={() => setView('SETTINGS')}
-                className="p-2 bg-amber-100 text-amber-700 rounded-full animate-pulse"
+                className="p-2 bg-amber-100 text-amber-700 rounded-full animate-pulse md:hidden"
                 title="Enable Notifications in Settings"
             >
                 <BellOff className="w-6 h-6" />
@@ -623,7 +623,7 @@ export default function App() {
       </header>
 
       {/* Sorting Controls */}
-      <div className="px-4 flex items-center gap-2 overflow-x-auto no-scrollbar">
+      <div className="px-4 md:px-8 flex items-center gap-2 overflow-x-auto no-scrollbar">
          <span className="text-xs font-bold text-slate-400 uppercase mr-1">Sort By:</span>
          <button 
             onClick={() => setDashboardSort('TIME')}
@@ -650,76 +650,79 @@ export default function App() {
             <Pill className="w-3 h-3 inline mr-1" /> Med Name
          </button>
       </div>
+      
+      {/* Grid Content */}
+      <div className="px-4 md:px-8">
+        {upcomingDoses.length === 0 ? (
+            <div className="p-8 bg-white rounded-2xl text-center shadow-sm border border-slate-100 mt-4 max-w-md mx-auto md:max-w-none">
+            <Check className="w-12 h-12 text-teal-500 mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-slate-800">All Caught Up</h3>
+            <p className="text-slate-400">No scheduled doses pending.</p>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
+            {upcomingDoses.map(med => {
+                const isStat = med.frequency === FrequencyType.STAT;
+                const status = isStat ? 'stat' : getRelativeTimeStatus(med.nextDueAt!);
+                let statusColor = "bg-teal-50 border-teal-200";
+                let textColor = "text-teal-900";
+                let timeColor = "text-teal-700";
+                
+                if (status === 'overdue') {
+                statusColor = "bg-red-50 border-red-200 animate-pulse";
+                textColor = "text-red-900";
+                timeColor = "text-red-700";
+                } else if (status === 'stat') {
+                statusColor = "bg-rose-50 border-rose-200";
+                textColor = "text-rose-900";
+                timeColor = "text-rose-700";
+                } else if (status === 'soon') {
+                statusColor = "bg-amber-50 border-amber-200";
+                textColor = "text-amber-900";
+                timeColor = "text-amber-700";
+                }
 
-      {upcomingDoses.length === 0 ? (
-        <div className="mx-4 p-8 bg-white rounded-2xl text-center shadow-sm border border-slate-100 mt-4">
-          <Check className="w-12 h-12 text-teal-500 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-slate-800">All Caught Up</h3>
-          <p className="text-slate-400">No scheduled doses pending.</p>
-        </div>
-      ) : (
-        <div className="space-y-3 px-4 mt-2">
-          {upcomingDoses.map(med => {
-            const isStat = med.frequency === FrequencyType.STAT;
-            const status = isStat ? 'stat' : getRelativeTimeStatus(med.nextDueAt!);
-            let statusColor = "bg-teal-50 border-teal-200";
-            let textColor = "text-teal-900";
-            let timeColor = "text-teal-700";
-            
-            if (status === 'overdue') {
-              statusColor = "bg-red-50 border-red-200 animate-pulse";
-              textColor = "text-red-900";
-              timeColor = "text-red-700";
-            } else if (status === 'stat') {
-              statusColor = "bg-rose-50 border-rose-200";
-              textColor = "text-rose-900";
-              timeColor = "text-rose-700";
-            } else if (status === 'soon') {
-              statusColor = "bg-amber-50 border-amber-200";
-              textColor = "text-amber-900";
-              timeColor = "text-amber-700";
-            }
-
-            return (
-              <div key={med.id} className={`p-4 rounded-xl border ${statusColor} shadow-sm flex justify-between items-center`}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {isStat ? (
-                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/50 flex items-center gap-1 ${timeColor}`}>
-                            <Zap className="w-3 h-3 fill-current" /> STAT
-                         </span>
-                    ) : (
-                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/50 ${timeColor}`}>
-                            {status === 'overdue' ? 'OVERDUE' : formatTime(med.nextDueAt!)}
-                         </span>
+                return (
+                <div key={med.id} className={`p-4 rounded-xl border ${statusColor} shadow-sm flex justify-between items-center`}>
+                    <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        {isStat ? (
+                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/50 flex items-center gap-1 ${timeColor}`}>
+                                <Zap className="w-3 h-3 fill-current" /> STAT
+                            </span>
+                        ) : (
+                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/50 ${timeColor}`}>
+                                {status === 'overdue' ? 'OVERDUE' : formatTime(med.nextDueAt!)}
+                            </span>
+                        )}
+                        <span className="text-xs text-slate-500 font-medium truncate">{med.patientName}</span>
+                    </div>
+                    <h3 className={`text-lg font-bold ${textColor} truncate`}>{med.name}</h3>
+                    <p className={`text-sm opacity-80 ${textColor} truncate`}>
+                        {med.dose} • {med.form ? `${med.form} • ` : ''}{med.route}
+                    </p>
+                    {med.notes && (
+                        <div className="flex items-center gap-1 mt-1.5 text-xs text-slate-500 italic">
+                            <StickyNote className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{med.notes}</span>
+                        </div>
                     )}
-                    <span className="text-xs text-slate-500 font-medium truncate">{med.patientName}</span>
-                  </div>
-                  <h3 className={`text-lg font-bold ${textColor} truncate`}>{med.name}</h3>
-                  <p className={`text-sm opacity-80 ${textColor} truncate`}>
-                      {med.dose} • {med.form ? `${med.form} • ` : ''}{med.route}
-                  </p>
-                  {med.notes && (
-                      <div className="flex items-center gap-1 mt-1.5 text-xs text-slate-500 italic">
-                          <StickyNote className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{med.notes}</span>
-                      </div>
-                  )}
+                    </div>
+                    <button 
+                    onClick={() => quickServe(med.id)}
+                    className="ml-3 bg-white p-3 rounded-full shadow-md active:scale-95 transition-transform border border-slate-100 flex-shrink-0"
+                    >
+                    <Check className={`w-6 h-6 ${status === 'overdue' ? 'text-red-600' : 'text-teal-600'}`} />
+                    </button>
                 </div>
-                <button 
-                  onClick={() => quickServe(med.id)}
-                  className="ml-3 bg-white p-3 rounded-full shadow-md active:scale-95 transition-transform border border-slate-100 flex-shrink-0"
-                >
-                  <Check className={`w-6 h-6 ${status === 'overdue' ? 'text-red-600' : 'text-teal-600'}`} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                );
+            })}
+            </div>
+        )}
+      </div>
       
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4 px-4 mt-4">
+      <div className="px-4 md:px-8 mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
             <p className="text-slate-400 text-xs font-bold uppercase">Active Patients</p>
             <p className="text-2xl font-bold text-slate-800">{patients.length}</p>
@@ -733,28 +736,29 @@ export default function App() {
   );
 
   const renderPatientList = () => (
-    <div className="space-y-4 pb-24">
-      <header className="px-4 pt-6 pb-2 flex justify-between items-end">
+    <div className="space-y-4 pb-24 md:pb-10 h-full">
+      <header className="px-4 md:px-8 pt-6 pb-2 flex justify-between items-end">
         <div>
             <h1 className="text-3xl font-bold text-slate-800">Patients</h1>
             <p className="text-slate-500">{patients.length} admitted</p>
         </div>
         <button 
           onClick={() => { setEditingPatient(null); setIsAddPatientOpen(true); }}
-          className="bg-teal-600 text-white p-2 rounded-full shadow-lg active:bg-teal-700"
+          className="bg-teal-600 text-white p-2 md:px-4 md:py-2 md:rounded-xl rounded-full shadow-lg active:bg-teal-700 flex items-center gap-2"
         >
           <Plus className="w-6 h-6" />
+          <span className="hidden md:inline font-bold">Add Patient</span>
         </button>
       </header>
 
-      <div className="px-4 space-y-3">
+      <div className="px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {patients.map(patient => {
             const activeMeds = medications.filter(m => m.patientId === patient.id && !m.isCompleted).length;
             return (
                 <div 
                   key={patient.id}
                   onClick={() => { setSelectedPatientId(patient.id); setView('PATIENT_DETAIL'); }}
-                  className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 active:bg-slate-50 transition-colors flex justify-between items-center"
+                  className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:border-teal-200 hover:shadow-md cursor-pointer active:bg-slate-50 transition-all flex justify-between items-center"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-lg">
@@ -776,25 +780,25 @@ export default function App() {
                 </div>
             );
         })}
-        {patients.length === 0 && (
-            <div className="text-center py-10 text-slate-400">
-                <p>No patients added yet.</p>
-                <p className="text-sm">Tap + to add one.</p>
-            </div>
-        )}
       </div>
+      {patients.length === 0 && (
+        <div className="text-center py-10 text-slate-400">
+            <p>No patients added yet.</p>
+            <p className="text-sm">Tap + to add one.</p>
+        </div>
+       )}
     </div>
   );
 
   const renderPatientDetail = () => {
     if (!selectedPatient) return null;
     return (
-      <div className="space-y-4 pb-24">
+      <div className="space-y-4 pb-24 md:pb-10 h-full flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-[#f1f5f9] z-10 px-4 pt-6 pb-2">
+        <div className="sticky top-0 bg-[#f1f5f9] md:static z-10 px-4 md:px-8 pt-6 pb-2">
             <button 
                 onClick={() => setView('PATIENTS')}
-                className="flex items-center gap-1 text-slate-500 mb-2 active:opacity-60"
+                className="flex items-center gap-1 text-slate-500 mb-2 active:opacity-60 hover:text-teal-600 transition-colors"
             >
                 <ChevronLeft className="w-5 h-5" /> Back
             </button>
@@ -828,7 +832,7 @@ export default function App() {
                         setFormFrequency(FrequencyType.STAT); // Default for new
                         setIsAddMedOpen(true); 
                     }}
-                    className="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full md:w-auto md:px-8 bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors"
                 >
                     <Plus className="w-5 h-5" /> Add Medication
                 </button>
@@ -836,7 +840,7 @@ export default function App() {
         </div>
 
         {/* Active Meds List */}
-        <div className="px-4 space-y-3">
+        <div className="px-4 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {activeMeds.map(med => {
                 const isStat = med.frequency === FrequencyType.STAT;
                 const isPRN = med.frequency === FrequencyType.PRN;
@@ -849,7 +853,7 @@ export default function App() {
                 const isSelected = selectedMedIds.has(med.id);
 
                 return (
-                    <div key={med.id} className={`flex items-stretch bg-white rounded-xl shadow-sm border transition-all ${isSelected ? 'border-teal-500 ring-1 ring-teal-500 bg-teal-50' : isStat ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'}`}>
+                    <div key={med.id} className={`flex items-stretch bg-white rounded-xl shadow-sm border transition-all ${isSelected ? 'border-teal-500 ring-1 ring-teal-500 bg-teal-50' : isStat ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100 hover:border-teal-200'}`}>
                         {/* Checkbox Area */}
                         <div 
                             className={`w-12 flex items-center justify-center border-r cursor-pointer ${isStat ? 'border-rose-200' : 'border-slate-100'}`}
@@ -938,7 +942,7 @@ export default function App() {
                                 </div>
                                 <button 
                                     onClick={() => setLoggingMed(med)}
-                                    className="bg-white border border-teal-600 text-teal-600 px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm active:bg-teal-50 flex items-center gap-1.5"
+                                    className="bg-white border border-teal-600 text-teal-600 px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm active:bg-teal-50 hover:bg-teal-50 transition-colors flex items-center gap-1.5"
                                 >
                                     <ClipboardList className="w-3.5 h-3.5" />
                                     Log
@@ -949,7 +953,7 @@ export default function App() {
                 );
             })}
              {activeMeds.length === 0 && (
-                <div className="text-center py-10 text-slate-400">
+                <div className="text-center py-10 text-slate-400 col-span-full">
                     <Pill className="w-12 h-12 mx-auto mb-2 opacity-20" />
                     <p>No active medications.</p>
                 </div>
@@ -958,11 +962,11 @@ export default function App() {
 
         {/* Completed Meds Section */}
         {completedMeds.length > 0 && (
-            <div className="px-4 mt-6">
+            <div className="px-4 md:px-8 mt-6">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <CheckSquare className="w-4 h-4" /> Completed / Discontinued
                 </h3>
-                <div className="space-y-3 opacity-75">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 opacity-75">
                 {completedMeds.map(med => (
                     <div key={med.id} className="bg-slate-50 rounded-xl border border-slate-200 p-4">
                         <div className="flex justify-between items-start">
@@ -1008,11 +1012,11 @@ export default function App() {
         
         {/* Bulk Action Sticky Bar */}
         {selectedMedIds.size > 0 && (
-            <div className="fixed bottom-[72px] left-0 right-0 p-4 z-30 animate-in slide-in-from-bottom-5">
-                <div className="max-w-md mx-auto">
+            <div className="fixed bottom-[72px] md:bottom-8 left-0 right-0 md:left-64 p-4 z-30 animate-in slide-in-from-bottom-5 pointer-events-none">
+                <div className="max-w-md mx-auto pointer-events-auto">
                     <button 
                         onClick={handleBulkServe}
-                        className="w-full bg-teal-800 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-between px-6 active:scale-95 transition-transform"
+                        className="w-full bg-teal-800 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-between px-6 active:scale-95 transition-transform hover:bg-teal-900"
                     >
                         <span className="flex items-center gap-2">
                             <CheckSquare className="w-5 h-5" />
@@ -1028,7 +1032,7 @@ export default function App() {
   };
 
   const renderSettings = () => (
-    <div className="pb-24 px-4 pt-6 space-y-6">
+    <div className="pb-24 px-4 md:px-8 pt-6 space-y-6 max-w-2xl mx-auto md:mx-0">
         <h1 className="text-3xl font-bold text-slate-800">Settings & Tools</h1>
         
         {/* Notifications Section */}
@@ -1060,7 +1064,7 @@ export default function App() {
                 {notificationPermission !== 'granted' && (
                      <button 
                         onClick={requestNotificationPermission}
-                        className="w-full bg-teal-600 text-white text-sm font-bold py-2 rounded-lg shadow-sm active:bg-teal-700 flex justify-center gap-2"
+                        className="w-full bg-teal-600 text-white text-sm font-bold py-2 rounded-lg shadow-sm active:bg-teal-700 flex justify-center gap-2 hover:bg-teal-700 transition-colors"
                      >
                         Enable Alerts
                         {window.self !== window.top && <ExternalLink className="w-4 h-4 opacity-50"/>}
@@ -1070,7 +1074,7 @@ export default function App() {
                 {notificationPermission === 'granted' && (
                      <button 
                         onClick={sendTestNotification}
-                        className="w-full bg-white border border-slate-300 text-slate-600 text-xs font-bold py-2 rounded-lg active:bg-slate-50"
+                        className="w-full bg-white border border-slate-300 text-slate-600 text-xs font-bold py-2 rounded-lg active:bg-slate-50 hover:bg-slate-50 transition-colors"
                      >
                         Send Test Alert
                      </button>
@@ -1093,9 +1097,9 @@ export default function App() {
                     <h2 className="text-white font-bold text-lg">AI Drug Assistant</h2>
                 </div>
                 <button 
-                    onClick={() => {
+                    onClick={async () => {
                         try {
-                            window.aistudio.openSelectKey();
+                            await window.aistudio.openSelectKey();
                         } catch (e) {
                             alert("Key selection tool not available.");
                         }
@@ -1117,7 +1121,7 @@ export default function App() {
                 <button 
                     onClick={handleAskAi}
                     disabled={isAiLoading || !aiQuery.trim()}
-                    className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg disabled:opacity-50"
+                    className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition-colors"
                 >
                     {isAiLoading ? 'Thinking...' : 'Ask Assistant'}
                 </button>
@@ -1163,40 +1167,85 @@ export default function App() {
 
   // --- RENDER ---
 
-  return (
-    <div className="min-h-screen font-sans text-slate-900">
-      <main className="max-w-md mx-auto min-h-screen bg-[#f1f5f9] relative shadow-2xl">
-        
-        {/* View Router */}
-        {view === 'DASHBOARD' && renderDashboard()}
-        {view === 'PATIENTS' && renderPatientList()}
-        {view === 'PATIENT_DETAIL' && renderPatientDetail()}
-        {view === 'SETTINGS' && renderSettings()}
+  const NavItem = ({ targetView, icon: Icon, label }: { targetView: ViewState, icon: any, label: string }) => {
+     const isActive = view === targetView || (targetView === 'PATIENTS' && view === 'PATIENT_DETAIL');
+     return (
+        <button 
+            onClick={() => setView(targetView)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full ${isActive ? 'bg-teal-50 text-teal-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+        >
+            <Icon className={`w-6 h-6 ${isActive ? 'text-teal-600' : ''}`} />
+            <span className="text-sm">{label}</span>
+        </button>
+     );
+  };
 
-        {/* Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 px-6 py-3 flex justify-between items-center z-40 pb-safe">
-            <button 
-                onClick={() => setView('DASHBOARD')}
-                className={`flex flex-col items-center gap-1 ${view === 'DASHBOARD' ? 'text-teal-600' : 'text-slate-400'}`}
-            >
-                <Activity className="w-6 h-6" />
-                <span className="text-[10px] font-bold">Upcoming</span>
-            </button>
-            <button 
-                onClick={() => setView('PATIENTS')}
-                className={`flex flex-col items-center gap-1 ${view === 'PATIENTS' || view === 'PATIENT_DETAIL' ? 'text-teal-600' : 'text-slate-400'}`}
-            >
-                <Users className="w-6 h-6" />
-                <span className="text-[10px] font-bold">Patients</span>
-            </button>
-            <button 
-                onClick={() => setView('SETTINGS')}
-                className={`flex flex-col items-center gap-1 ${view === 'SETTINGS' ? 'text-teal-600' : 'text-slate-400'}`}
-            >
-                <Settings className="w-6 h-6" />
-                <span className="text-[10px] font-bold">Tools</span>
-            </button>
-        </nav>
+  return (
+    <div className="min-h-screen font-sans text-slate-900 flex bg-[#f1f5f9]">
+      
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0 shrink-0">
+          <div className="p-6 border-b border-slate-100 flex items-center gap-2">
+             <div className="bg-teal-600 text-white p-1.5 rounded-lg">
+                <HeartPulse className="w-6 h-6" />
+             </div>
+             <span className="font-bold text-xl text-slate-800 tracking-tight">NurseFlow</span>
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+              <NavItem targetView="DASHBOARD" icon={Activity} label="Dashboard" />
+              <NavItem targetView="PATIENTS" icon={Users} label="Patients" />
+              <NavItem targetView="SETTINGS" icon={Settings} label="Settings" />
+          </nav>
+          <div className="p-4 border-t border-slate-100">
+             <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs">
+                    NF
+                 </div>
+                 <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-700 truncate">Nurse Logged In</p>
+                    <p className="text-[10px] text-slate-400">Shift A</p>
+                 </div>
+             </div>
+          </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto relative scroll-smooth">
+        <div className="w-full mx-auto min-h-full flex flex-col">
+            
+            {/* View Router */}
+            <div className="flex-1">
+                {view === 'DASHBOARD' && renderDashboard()}
+                {view === 'PATIENTS' && renderPatientList()}
+                {view === 'PATIENT_DETAIL' && renderPatientDetail()}
+                {view === 'SETTINGS' && renderSettings()}
+            </div>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-between items-center z-40 pb-safe">
+                <button 
+                    onClick={() => setView('DASHBOARD')}
+                    className={`flex flex-col items-center gap-1 ${view === 'DASHBOARD' ? 'text-teal-600' : 'text-slate-400'}`}
+                >
+                    <Activity className="w-6 h-6" />
+                    <span className="text-[10px] font-bold">Upcoming</span>
+                </button>
+                <button 
+                    onClick={() => setView('PATIENTS')}
+                    className={`flex flex-col items-center gap-1 ${view === 'PATIENTS' || view === 'PATIENT_DETAIL' ? 'text-teal-600' : 'text-slate-400'}`}
+                >
+                    <Users className="w-6 h-6" />
+                    <span className="text-[10px] font-bold">Patients</span>
+                </button>
+                <button 
+                    onClick={() => setView('SETTINGS')}
+                    className={`flex flex-col items-center gap-1 ${view === 'SETTINGS' ? 'text-teal-600' : 'text-slate-400'}`}
+                >
+                    <Settings className="w-6 h-6" />
+                    <span className="text-[10px] font-bold">Tools</span>
+                </button>
+            </nav>
+        </div>
 
         {/* Add/Edit Patient Modal */}
         <Modal 

@@ -1,8 +1,9 @@
 
+
 declare global {
   interface AIStudio {
-    openSelectKey: () => void;
-    hasSelectedApiKey: () => boolean;
+    openSelectKey: () => Promise<void>;
+    hasSelectedApiKey: () => Promise<boolean>;
   }
 }
 
