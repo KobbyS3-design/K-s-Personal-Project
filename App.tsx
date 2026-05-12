@@ -93,10 +93,10 @@ const AVATAR_COLORS = [
 
 // --- STYLING CONSTANTS FOR REUSE ---
 // Enhanced border and text contrast for better accessibility in light mode
-const INPUT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-bold outline-none transition-all placeholder:text-slate-400";
-const SELECT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-bold outline-none transition-all cursor-pointer";
-const TEXTAREA_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-medium outline-none transition-all placeholder:text-slate-400";
-const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-600 dark:text-slate-400 tracking-widest mb-2 block";
+const INPUT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all placeholder:text-slate-400";
+const SELECT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all cursor-pointer";
+const TEXTAREA_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-medium outline-none transition-all placeholder:text-slate-400";
+const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-widest mb-2 block";
 
 // --- COMPONENTS ---
 
@@ -166,7 +166,11 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<Nurse | null>(null);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => JSON.parse(localStorage.getItem('darkMode') || 'false'));
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) return JSON.parse(saved);
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [view, setView] = useState<ViewState>('DASHBOARD');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);

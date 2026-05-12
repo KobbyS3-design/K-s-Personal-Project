@@ -14,7 +14,7 @@ export const askDrugInfo = async (query: string): Promise<string> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-1.5-flash',
       contents: `You are a helpful medical assistant for a nurse. Provide brief, concise, and clinically accurate information about medications.
       Query: ${query}`,
     });
@@ -55,7 +55,7 @@ export const parseMedicationFromAudio = async (audioBase64: string, mimeType: st
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-1.5-flash',
     contents: {
       parts: [
         { inlineData: { mimeType: mimeType, data: audioBase64 } },
