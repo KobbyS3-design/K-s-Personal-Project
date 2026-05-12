@@ -93,10 +93,10 @@ const AVATAR_COLORS = [
 
 // --- STYLING CONSTANTS FOR REUSE ---
 // Enhanced border and text contrast for better accessibility in light mode
-const INPUT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all placeholder:text-slate-400";
-const SELECT_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all cursor-pointer";
-const TEXTAREA_CLASS = "w-full p-4 bg-white dark:bg-slate-700 rounded-2xl border border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-medium outline-none transition-all placeholder:text-slate-400";
-const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-widest mb-2 block";
+const INPUT_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600";
+const SELECT_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat pr-12";
+const TEXTAREA_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-medium outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600";
+const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-400 tracking-widest mb-2 block";
 
 // --- COMPONENTS ---
 
@@ -1071,14 +1071,14 @@ export default function App() {
                  <div className="flex gap-2">
                    <input name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS} flex-1`} placeholder="500mg" />
                    <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={`${SELECT_CLASS} w-32`}>
-                     <option value="Tablet">Tab</option>
-                     <option value="Capsule">Cap</option>
-                     <option value="Suspension">Susp</option>
-                     <option value="Syrup">Syr</option>
-                     <option value="Injection">Inj</option>
-                     <option value="Cream">Cream</option>
-                     <option value="Drops">Drops</option>
-                     <option value="Inhaler">Inhaler</option>
+                     <option value="Tablet" className="dark:bg-slate-900 dark:text-white">Tab</option>
+                     <option value="Capsule" className="dark:bg-slate-900 dark:text-white">Cap</option>
+                     <option value="Suspension" className="dark:bg-slate-900 dark:text-white">Susp</option>
+                     <option value="Syrup" className="dark:bg-slate-900 dark:text-white">Syr</option>
+                     <option value="Injection" className="dark:bg-slate-900 dark:text-white">Inj</option>
+                     <option value="Cream" className="dark:bg-slate-900 dark:text-white">Cream</option>
+                     <option value="Drops" className="dark:bg-slate-900 dark:text-white">Drops</option>
+                     <option value="Inhaler" className="dark:bg-slate-900 dark:text-white">Inhaler</option>
                    </select>
                  </div>
               </div>
