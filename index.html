@@ -10,11 +10,12 @@
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
             colors: {
-              slate: {
-                850: '#1e293b', 
-                950: '#020617',
-              }
+              'slate-850': '#1e293b',
             },
             typography: (theme) => ({
               DEFAULT: {

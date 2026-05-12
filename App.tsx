@@ -92,11 +92,11 @@ const AVATAR_COLORS = [
 ];
 
 // --- STYLING CONSTANTS FOR REUSE ---
-// Enhanced border and text contrast for better accessibility in light mode
-const INPUT_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600";
-const SELECT_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-bold outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat pr-12";
-const TEXTAREA_CLASS = "w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 focus:ring-4 focus:ring-teal-500/20 text-slate-950 dark:text-slate-50 font-medium outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600";
-const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-400 tracking-widest mb-2 block";
+// Enhanced border and text contrast for better accessibility
+const INPUT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-bold outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
+const SELECT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-bold outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat pr-12 font-sans";
+const TEXTAREA_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-medium outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
+const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-widest mb-2 block font-sans";
 
 // --- COMPONENTS ---
 
@@ -1069,7 +1069,7 @@ export default function App() {
               <div>
                  <label className={LABEL_CLASS}>Dose & Form</label>
                  <div className="flex gap-2">
-                   <input name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS} flex-1`} placeholder="500mg" />
+                   <input type="text" name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS} flex-1`} placeholder="500mg" />
                    <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={`${SELECT_CLASS} w-32`}>
                      <option value="Tablet" className="dark:bg-slate-900 dark:text-white">Tab</option>
                      <option value="Capsule" className="dark:bg-slate-900 dark:text-white">Cap</option>
@@ -1085,13 +1085,13 @@ export default function App() {
               <div>
                  <label className={LABEL_CLASS}>Route</label>
                  <select name="route" defaultValue={editingMed?.route || "PO"} className={SELECT_CLASS}>
-                  <option value="PO">PO (Oral)</option>
-                  <option value="IV">IV (Intravenous)</option>
-                  <option value="IM">IM</option>
-                  <option value="SC">Subcut</option>
-                  <option value="PR">Rectal</option>
-                  <option value="TOP">Topical</option>
-                  <option value="INH">Inhalation</option>
+                  <option value="PO" className="dark:bg-slate-900 dark:text-white">PO (Oral)</option>
+                  <option value="IV" className="dark:bg-slate-900 dark:text-white">IV (Intravenous)</option>
+                  <option value="IM" className="dark:bg-slate-900 dark:text-white">IM</option>
+                  <option value="SC" className="dark:bg-slate-900 dark:text-white">Subcut</option>
+                  <option value="PR" className="dark:bg-slate-900 dark:text-white">Rectal</option>
+                  <option value="TOP" className="dark:bg-slate-900 dark:text-white">Topical</option>
+                  <option value="INH" className="dark:bg-slate-900 dark:text-white">Inhalation</option>
                  </select>
               </div>
             </div>
@@ -1099,12 +1099,12 @@ export default function App() {
               <div>
                  <label className={LABEL_CLASS}>Frequency</label>
                  <select name="frequency" ref={freqInputRef} defaultValue={editingMed?.frequency || "STAT"} onChange={e => setFormFrequency(e.target.value as FrequencyType)} className={SELECT_CLASS}>
-                  <option value="STAT">STAT (Now)</option>
-                  <option value="DAILY">Daily (QD)</option>
-                  <option value="BD">BID (12h)</option>
-                  <option value="TID">TID (8h)</option>
-                  <option value="PRN">PRN (Needed)</option>
-                  <option value="CUSTOM">Custom</option>
+                  <option value="STAT" className="dark:bg-slate-900 dark:text-white">STAT (Now)</option>
+                  <option value="DAILY" className="dark:bg-slate-900 dark:text-white">Daily (QD)</option>
+                  <option value="BD" className="dark:bg-slate-900 dark:text-white">BID (12h)</option>
+                  <option value="TID" className="dark:bg-slate-900 dark:text-white">TID (8h)</option>
+                  <option value="PRN" className="dark:bg-slate-900 dark:text-white">PRN (Needed)</option>
+                  <option value="CUSTOM" className="dark:bg-slate-900 dark:text-white">Custom</option>
                  </select>
               </div>
               <div>
