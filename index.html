@@ -1,24 +1,65 @@
 <!DOCTYPE html>
-<html lang="en" className="h-full">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>NurseFlow</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                850: '#1e293b', 
+                950: '#020617',
+              }
+            },
+            typography: (theme) => ({
+              DEFAULT: {
+                css: {
+                  color: theme('colors.slate.900'),
+                  a: {
+                    color: theme('colors.teal.600'),
+                    '&:hover': {
+                      color: theme('colors.teal.700'),
+                    },
+                  },
+                },
+              },
+              dark: {
+                css: {
+                  color: theme('colors.slate.100'),
+                  a: {
+                    color: theme('colors.teal.400'),
+                    '&:hover': {
+                      color: theme('colors.teal.300'),
+                    },
+                  },
+                },
+              },
+            }),
+          }
+        }
+      }
+    </script>
     <meta name="theme-color" content="#0d9488" />
+    <link rel="manifest" href="/manifest.json" />
     <style>
-      /* Hide scrollbar for Chrome, Safari and Opera */
       .no-scrollbar::-webkit-scrollbar {
           display: none;
       }
-      /* Hide scrollbar for IE, Edge and Firefox */
       .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+          -ms-overflow-style: none;
+          scrollbar-width: none;
       }
       body {
         -webkit-tap-highlight-color: transparent;
-        background-color: #f1f5f9; /* Slate-100 */
+        background-color: #f1f5f9;
+      }
+      html.dark body {
+        background-color: #020617;
       }
     </style>
   <script type="importmap">
@@ -32,8 +73,10 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
-  <body className="h-full bg-slate-100">
-    <div id="root" className="h-full"></div>
-  </body>
+  <body class="h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
+    <div id="root" class="h-full"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

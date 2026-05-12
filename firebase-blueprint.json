@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "Nurse": {
+      "title": "Nurse",
+      "description": "A nurse profile using the application.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the nurse" },
+        "initials": { "type": "string", "description": "Initials for quick display" },
+        "designation": { "type": "string", "description": "Professional designation (e.g., RN, LPN)" },
+        "color": { "type": "string", "description": "UI avatar color class" },
+        "email": { "type": "string", "format": "email", "description": "Email address from auth" }
+      },
+      "required": ["name", "initials", "designation", "email"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "A patient being managed by nurses.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the patient" },
+        "roomNumber": { "type": "string", "description": "Current room number" },
+        "createdBy": { "type": "string", "description": "UID of the nurse who added the patient" }
+      },
+      "required": ["name", "createdBy"]
+    },
+    "Medication": {
+      "title": "Medication",
+      "description": "A medication order for a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string", "description": "ID of the patient" },
+        "name": { "type": "string", "description": "Drug name" },
+        "dose": { "type": "string", "description": "Dosage amount" },
+        "form": { "type": "string", "description": "Medication form (e.g., Tablet)" },
+        "route": { "type": "string", "description": "Administration route (e.g., PO)" },
+        "frequency": { "type": "string", "enum": ["STAT", "BD", "TID", "QID", "DAILY", "PRN", "CUSTOM"] },
+        "intervalHours": { "type": "number" },
+        "lastServedAt": { "type": "number", "description": "Timestamp of last dose" },
+        "nextDueAt": { "type": "number", "description": "Timestamp of next dose" },
+        "notes": { "type": "string" },
+        "isCompleted": { "type": "boolean" },
+        "createdBy": { "type": "string", "description": "UID of the nurse who added the med" }
+      },
+      "required": ["patientId", "name", "dose", "route", "frequency", "createdBy"]
+    },
+    "MedicationLog": {
+      "title": "MedicationLog",
+      "description": "A record of a medication being served or missed.",
+      "type": "object",
+      "properties": {
+        "medicationId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "servedAt": { "type": "number" },
+        "status": { "type": "string", "enum": ["SERVED", "MISSED"] },
+        "notes": { "type": "string" },
+        "nurseId": { "type": "string" },
+        "nurseName": { "type": "string" },
+        "nurseInitials": { "type": "string" },
+        "nurseColor": { "type": "string" }
+      },
+      "required": ["medicationId", "patientId", "servedAt", "status", "nurseId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "Nurse",
+      "description": "Nurse profile documents."
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Patient records."
+    },
+    "/medications/{medicationId}": {
+      "schema": "Medication",
+      "description": "Medication orders."
+    },
+    "/logs/{logId}": {
+      "schema": "MedicationLog",
+      "description": "Medication administration history."
+    }
+  }
+}

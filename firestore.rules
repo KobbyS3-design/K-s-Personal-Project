@@ -1,0 +1,140 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId} (Firebase Auth UID)
+// Fields:
+//   - name: string (required)
+//   - initials: string (required)
+//   - designation: string (required)
+//   - color: string (optional)
+//   - email: string (required, format: email)
+//
+// Collection: patients
+// Document ID: auto-generated
+// Fields:
+//   - name: string (required)
+//   - roomNumber: string (optional)
+//   - createdBy: string (required, UID)
+//
+// Collection: medications
+// Document ID: auto-generated
+// Fields:
+//   - patientId: string (required)
+//   - name: string (required)
+//   - dose: string (required)
+//   - form: string (optional)
+//   - route: string (required)
+//   - frequency: string (required, enum)
+//   - intervalHours: number (optional)
+//   - lastServedAt: number (optional)
+//   - nextDueAt: number (optional)
+//   - notes: string (optional)
+//   - isCompleted: boolean (optional)
+//   - createdBy: string (required, UID)
+//
+// Collection: logs
+// Document ID: auto-generated
+// Fields:
+//   - medicationId: string (required)
+//   - patientId: string (required)
+//   - servedAt: number (required)
+//   - status: string (required, enum)
+//   - notes: string (optional)
+//   - nurseId: string (required, UID)
+//   - nurseName: string (required)
+//   - nurseInitials: string (required)
+//   - nurseColor: string (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidNurse(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.initials is string && data.initials.size() > 0 && data.initials.size() < 10 &&
+             data.designation is string && data.designation.size() > 0 && data.designation.size() < 50 &&
+             data.email is string && isValidEmail(data.email);
+    }
+
+    function isValidPatient(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.createdBy == request.auth.uid;
+    }
+
+    function isValidMedication(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.patientId is string &&
+             data.createdBy == request.auth.uid;
+    }
+
+    function isValidLog(data) {
+      return data.medicationId is string &&
+             data.patientId is string &&
+             data.nurseId == request.auth.uid &&
+             data.status in ['SERVED', 'MISSED'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidNurse(request.resource.data);
+      allow update: if isOwner(userId) && isValidNurse(request.resource.data);
+    }
+
+    match /patients/{patientId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow update: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /medications/{medicationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMedication(request.resource.data);
+      allow update: if isAuthenticated() && isValidMedication(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidLog(request.resource.data);
+      allow update: if isAuthenticated() && isValidLog(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.nurseId == request.auth.uid;
+    }
+    
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
