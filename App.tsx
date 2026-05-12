@@ -93,9 +93,9 @@ const AVATAR_COLORS = [
 
 // --- STYLING CONSTANTS FOR REUSE ---
 // Enhanced border and text contrast for better accessibility
-const INPUT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-bold outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
-const SELECT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-bold outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat pr-12 font-sans";
-const TEXTAREA_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-black dark:text-white font-medium outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
+const INPUT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-bold outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
+const SELECT_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-bold outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat pr-12 font-sans";
+const TEXTAREA_CLASS = "w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-teal-500/20 text-slate-900 dark:text-white font-medium outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 font-sans";
 const LABEL_CLASS = "text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-widest mb-2 block font-sans";
 
 // --- COMPONENTS ---
@@ -882,7 +882,7 @@ export default function App() {
                <label className={LABEL_CLASS}>Full Legal Name</label>
                <input name="name" required defaultValue={firebaseUser.displayName || ''} className={INPUT_CLASS} placeholder="e.g. Jonathan Doe" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                  <label className={LABEL_CLASS}>Clinical Initials</label>
                  <input name="initials" required maxLength={3} className={INPUT_CLASS} placeholder="JD" />
@@ -1065,12 +1065,12 @@ export default function App() {
                <label className={LABEL_CLASS}>Medication Name</label>
                <input name="name" ref={nameInputRef} defaultValue={editingMed?.name} required className={INPUT_CLASS} placeholder="e.g. Ciprofloxacin" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                  <label className={LABEL_CLASS}>Dose & Form</label>
                  <div className="flex gap-2">
-                   <input type="text" name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS} flex-1`} placeholder="500mg" />
-                   <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={`${SELECT_CLASS} w-32`}>
+                   <input type="text" name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS.replace('w-full', '')} flex-1 min-w-0`} placeholder="500mg" />
+                   <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={`${SELECT_CLASS.replace('w-full', '')} w-28 sm:w-32 shrink-0 px-2 sm:px-4`}>
                      <option value="Tablet" className="dark:bg-slate-900 dark:text-white">Tab</option>
                      <option value="Capsule" className="dark:bg-slate-900 dark:text-white">Cap</option>
                      <option value="Suspension" className="dark:bg-slate-900 dark:text-white">Susp</option>
@@ -1095,7 +1095,7 @@ export default function App() {
                  </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                  <label className={LABEL_CLASS}>Frequency</label>
                  <select name="frequency" ref={freqInputRef} defaultValue={editingMed?.frequency || "STAT"} onChange={e => setFormFrequency(e.target.value as FrequencyType)} className={SELECT_CLASS}>
@@ -1137,7 +1137,7 @@ export default function App() {
             const fd = new FormData(e.currentTarget); 
             handleManualLog(loggingMed!.id, fd.get('status') as LogStatus, Date.now(), fd.get('notes') as string); 
           }} className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label className="cursor-pointer group">
                 <input type="radio" name="status" value="SERVED" defaultChecked className="hidden peer" />
                 <div className="p-8 border-4 rounded-[2.5rem] transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 text-center font-black text-slate-900 dark:text-white text-lg shadow-sm peer-checked:shadow-xl">GIVEN</div>
