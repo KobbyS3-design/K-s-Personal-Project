@@ -21,6 +21,7 @@ export interface Nurse {
 export interface Patient {
   id: string;
   name: string;
+  wardRoom?: string;
   roomNumber?: string;
   createdBy: string;
 }

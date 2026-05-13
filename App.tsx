@@ -184,6 +184,7 @@ export default function App() {
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [formFrequency, setFormFrequency] = useState<FrequencyType>(FrequencyType.STAT); 
   const [loggingMed, setLoggingMed] = useState<Medication | null>(null);
+  const [editingLog, setEditingLog] = useState<MedicationLog | null>(null);
   const [expandedHistoryMedId, setExpandedHistoryMedId] = useState<string | null>(null);
   const [aiQuery, setAiQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
@@ -347,6 +348,30 @@ export default function App() {
     setLoggingMed(null);
   };
 
+  const handleEditLog = async (logId: string, status: LogStatus, timestamp: number, notes?: string) => {
+    const log = logs.find(l => l.id === logId);
+    if (!log) return;
+    await updateDoc(doc(db, 'logs', logId), {
+      status,
+      servedAt: timestamp,
+      notes: notes || ""
+    });
+    
+    // If it's the most recent log, update the medication schedule to match the adjusted time
+    const medLogs = logs.filter(l => l.medicationId === log.medicationId).sort((a,b) => b.servedAt - a.servedAt);
+    if (medLogs.length === 0 || medLogs[0].id === logId) {
+      const med = medications.find(m => m.id === log.medicationId);
+      if (med && med.frequency !== FrequencyType.STAT && med.frequency !== FrequencyType.PRN) {
+        const interval = (med.intervalHours || FREQUENCY_HOURS[med.frequency] || 0) * 3600000;
+        await updateDoc(doc(db, 'medications', med.id), {
+          lastServedAt: status === 'SERVED' ? timestamp : med.lastServedAt,
+          nextDueAt: timestamp + interval
+        });
+      }
+    }
+    setEditingLog(null);
+  };
+
   const resumeMedication = async (medId: string) => {
     const m = medications.find(med => med.id === medId);
     if (!m) return;
@@ -466,7 +491,7 @@ export default function App() {
                   <p className="text-xs text-slate-600 dark:text-slate-500 font-bold">{m.dose} • {m.route}</p>
                 </div>
                 <button 
-                  onClick={() => handleManualLog(m.id, 'SERVED', Date.now())} 
+                  onClick={() => setLoggingMed(m)} 
                   className={`ml-4 p-4 rounded-2xl transition-all active:scale-90 ${isOverdue ? 'bg-rose-600 text-white shadow-xl shadow-rose-200' : 'bg-teal-50 text-teal-600 hover:bg-teal-100 shadow-lg shadow-teal-500/10'}`}
                 >
                   <Check className="w-6 h-6 stroke-[3px]" />
@@ -522,7 +547,7 @@ export default function App() {
             </div>
           </div>
           <button 
-            onClick={() => { setEditingMed(null); setIsAddMedOpen(true); }} 
+            onClick={() => { setEditingMed(null); setFormFrequency(FrequencyType.STAT); setIsAddMedOpen(true); }} 
             className="bg-teal-600 hover:bg-teal-700 text-white font-black py-4 px-8 rounded-3xl shadow-2xl shadow-teal-600/30 flex items-center justify-center gap-3 transition-all active:scale-95"
           >
             <Plus className="w-6 h-6" /> New Medication Order
@@ -665,7 +690,7 @@ export default function App() {
                 <div className="relative group">
                    <button className="p-2.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl"><MoreVertical className="w-5 h-5" /></button>
                    <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 z-20 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all scale-95 group-hover:scale-100 origin-top-right">
-                      <button onClick={() => { setEditingMed(m); setIsAddMedOpen(true); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl flex items-center gap-2"><Pencil className="w-4 h-4" /> Edit Order</button>
+                      <button onClick={() => { setEditingMed(m); setFormFrequency(m.frequency); setIsAddMedOpen(true); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl flex items-center gap-2"><Pencil className="w-4 h-4" /> Edit Order</button>
                       <button onClick={async () => await updateDoc(doc(db, 'medications', m.id), {isCompleted: true})} className="w-full text-left px-4 py-2.5 text-xs font-bold text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-xl flex items-center gap-2"><Archive className="w-4 h-4" /> Discontinue</button>
                       <button 
                         onClick={() => setConfirmConfig({
@@ -729,6 +754,7 @@ export default function App() {
                           <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{formatDate(l.servedAt)} at {formatTime(l.servedAt)}</p>
                         </div>
                         <div className="flex items-center gap-3 pl-3 border-l-2 border-slate-100 dark:border-slate-700">
+                          <button onClick={() => setEditingLog(l)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-700 rounded-xl transition-all"><Pencil className="w-4 h-4" /></button>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shadow-md border-2 border-white dark:border-slate-800 ${l.nurseColor || 'bg-slate-200'}`}>
                             {l.nurseInitials}
                           </div>
@@ -947,29 +973,48 @@ export default function App() {
                 <button onClick={() => setIsAddPatientOpen(true)} className="text-teal-600 font-black uppercase tracking-widest text-xs mt-2 hover:underline">Admit your first patient</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {patients.map(p => {
-                  const activeMedsCount = medications.filter(m => m.patientId === p.id && !m.isCompleted).length;
-                  const overdueCount = medications.filter(m => m.patientId === p.id && !m.isCompleted && m.nextDueAt && m.nextDueAt < Date.now()).length;
-                  return (
-                    <div key={p.id} onClick={() => { setSelectedPatientId(p.id); setView('PATIENT_DETAIL'); }} className="p-6 bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 hover:border-teal-400 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group">
-                      <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-3xl flex items-center justify-center font-black text-2xl text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors">{p.name.charAt(0)}</div>
-                        <div className="min-w-0">
-                           <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight truncate">{p.name}</h3>
-                           <p className="text-xs text-slate-500 font-black uppercase tracking-widest">Room {p.roomNumber || 'TBD'}</p>
-                        </div>
-                      </div>
-                      <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                        <div className="flex gap-2">
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{activeMedsCount} Meds</span>
-                           {overdueCount > 0 && <span className="text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md animate-pulse">{overdueCount} Overdue</span>}
-                        </div>
-                        <ChevronDown className="w-5 h-5 text-teal-600 -rotate-90" />
-                      </div>
+              <div className="space-y-10">
+                {Object.entries(
+                  patients.reduce((acc, p) => {
+                    const w = p.wardRoom || 'Unassigned Ward';
+                    acc[w] = acc[w] || [];
+                    acc[w].push(p);
+                    return acc;
+                  }, {} as Record<string, Patient[]>)
+                )
+                .sort(([wA], [wB]) => wA.localeCompare(wB))
+                .map(([ward, wardPatients]) => (
+                  <div key={ward} className="space-y-4">
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                      <div className="w-2 h-6 bg-teal-500 rounded-full"></div>
+                      {ward}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {wardPatients.map(p => {
+                        const activeMedsCount = medications.filter(m => m.patientId === p.id && !m.isCompleted).length;
+                        const overdueCount = medications.filter(m => m.patientId === p.id && !m.isCompleted && m.nextDueAt && m.nextDueAt < Date.now()).length;
+                        return (
+                          <div key={p.id} onClick={() => { setSelectedPatientId(p.id); setView('PATIENT_DETAIL'); }} className="p-6 bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 hover:border-teal-400 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group">
+                            <div className="flex items-center gap-5">
+                              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-3xl flex items-center justify-center font-black text-2xl text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors">{p.name.charAt(0)}</div>
+                              <div className="min-w-0">
+                                 <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight truncate">{p.name}</h3>
+                                 <p className="text-xs text-slate-500 font-black uppercase tracking-widest">Room {p.roomNumber || 'TBD'}</p>
+                              </div>
+                            </div>
+                            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                              <div className="flex gap-2">
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{activeMedsCount} Meds</span>
+                                 {overdueCount > 0 && <span className="text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md animate-pulse">{overdueCount} Overdue</span>}
+                              </div>
+                              <ChevronDown className="w-5 h-5 text-teal-600 -rotate-90" />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -992,11 +1037,12 @@ export default function App() {
             if (!firebaseUser) return;
             const fd = new FormData(e.currentTarget);
             const name = fd.get('name') as string;
+            const wardRoom = fd.get('wardRoom') as string;
             const room = fd.get('room') as string;
             if (editingPatient) {
-              await updateDoc(doc(db, 'patients', editingPatient.id), { name, roomNumber: room });
+              await updateDoc(doc(db, 'patients', editingPatient.id), { name, wardRoom, roomNumber: room });
             } else {
-              await addDoc(collection(db, 'patients'), { name, roomNumber: room, createdBy: firebaseUser.uid });
+              await addDoc(collection(db, 'patients'), { name, wardRoom, roomNumber: room, createdBy: firebaseUser.uid });
             }
             setIsAddPatientOpen(false);
             setEditingPatient(null);
@@ -1005,9 +1051,15 @@ export default function App() {
                <label className={LABEL_CLASS}>Patient Full Name</label>
                <input name="name" required defaultValue={editingPatient?.name} className={INPUT_CLASS} placeholder="e.g. Jonathan Doe" />
             </div>
-            <div>
-               <label className={LABEL_CLASS}>Room / Bed Assignment</label>
-               <input name="room" defaultValue={editingPatient?.roomNumber} className={INPUT_CLASS} placeholder="Room #" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                 <label className={LABEL_CLASS}>Ward</label>
+                 <input name="wardRoom" defaultValue={editingPatient?.wardRoom} className={INPUT_CLASS} placeholder="e.g. Ward A" />
+              </div>
+              <div>
+                 <label className={LABEL_CLASS}>Room / Bed</label>
+                 <input name="room" defaultValue={editingPatient?.roomNumber} className={INPUT_CLASS} placeholder="e.g. 102B" />
+              </div>
             </div>
             <button type="submit" className="w-full bg-teal-600 text-white font-black py-5 rounded-3xl shadow-2xl shadow-teal-600/30 active:scale-95 transition-all">
               {editingPatient ? "Save Changes" : "Confirm Admission"}
@@ -1065,24 +1117,25 @@ export default function App() {
                <label className={LABEL_CLASS}>Medication Name</label>
                <input name="name" ref={nameInputRef} defaultValue={editingMed?.name} required className={INPUT_CLASS} placeholder="e.g. Ciprofloxacin" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                 <label className={LABEL_CLASS}>Dose & Form</label>
-                 <div className="flex gap-2">
-                   <input type="text" name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={`${INPUT_CLASS.replace('w-full', '')} flex-1 min-w-0`} placeholder="500mg" />
-                   <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={`${SELECT_CLASS.replace('w-full', '')} w-28 sm:w-32 shrink-0 px-2 sm:px-4`}>
-                     <option value="Tablet" className="dark:bg-slate-900 dark:text-white">Tab</option>
-                     <option value="Capsule" className="dark:bg-slate-900 dark:text-white">Cap</option>
-                     <option value="Suspension" className="dark:bg-slate-900 dark:text-white">Susp</option>
-                     <option value="Syrup" className="dark:bg-slate-900 dark:text-white">Syr</option>
-                     <option value="Injection" className="dark:bg-slate-900 dark:text-white">Inj</option>
-                     <option value="Cream" className="dark:bg-slate-900 dark:text-white">Cream</option>
-                     <option value="Drops" className="dark:bg-slate-900 dark:text-white">Drops</option>
-                     <option value="Inhaler" className="dark:bg-slate-900 dark:text-white">Inhaler</option>
-                   </select>
-                 </div>
+            <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide snap-x">
+              <div className="min-w-[120px] flex-1 snap-start">
+                 <label className={LABEL_CLASS}>Dose</label>
+                 <input type="text" name="dose" ref={doseInputRef} defaultValue={editingMed?.dose} required className={INPUT_CLASS} placeholder="500mg" />
               </div>
-              <div>
+              <div className="min-w-[130px] flex-1 snap-start">
+                 <label className={LABEL_CLASS}>Form</label>
+                 <select name="form" defaultValue={editingMed?.notes?.includes('Form: ') ? editingMed.notes.split('Form: ')[1].split('\n')[0] : "Tablet"} className={SELECT_CLASS}>
+                   <option value="Tablet" className="dark:bg-slate-900 dark:text-white">Tab</option>
+                   <option value="Capsule" className="dark:bg-slate-900 dark:text-white">Cap</option>
+                   <option value="Suspension" className="dark:bg-slate-900 dark:text-white">Susp</option>
+                   <option value="Syrup" className="dark:bg-slate-900 dark:text-white">Syr</option>
+                   <option value="Injection" className="dark:bg-slate-900 dark:text-white">Inj</option>
+                   <option value="Cream" className="dark:bg-slate-900 dark:text-white">Cream</option>
+                   <option value="Drops" className="dark:bg-slate-900 dark:text-white">Drops</option>
+                   <option value="Inhaler" className="dark:bg-slate-900 dark:text-white">Inhaler</option>
+                 </select>
+              </div>
+              <div className="min-w-[130px] flex-1 snap-start">
                  <label className={LABEL_CLASS}>Route</label>
                  <select name="route" defaultValue={editingMed?.route || "PO"} className={SELECT_CLASS}>
                   <option value="PO" className="dark:bg-slate-900 dark:text-white">PO (Oral)</option>
@@ -1094,10 +1147,8 @@ export default function App() {
                   <option value="INH" className="dark:bg-slate-900 dark:text-white">Inhalation</option>
                  </select>
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                 <label className={LABEL_CLASS}>Frequency</label>
+              <div className="min-w-[140px] flex-1 snap-start">
+                 <label className={LABEL_CLASS}>Time / Freq</label>
                  <select name="frequency" ref={freqInputRef} defaultValue={editingMed?.frequency || "STAT"} onChange={e => setFormFrequency(e.target.value as FrequencyType)} className={SELECT_CLASS}>
                   <option value="STAT" className="dark:bg-slate-900 dark:text-white">STAT (Now)</option>
                   <option value="DAILY" className="dark:bg-slate-900 dark:text-white">Daily (QD)</option>
@@ -1107,19 +1158,20 @@ export default function App() {
                   <option value="CUSTOM" className="dark:bg-slate-900 dark:text-white">Custom</option>
                  </select>
               </div>
-              <div>
-                 <label className={LABEL_CLASS}>Interval (Hours)</label>
-                 <input 
-                    name="interval" 
-                    ref={intervalInputRef} 
-                    type="number" 
-                    disabled={formFrequency !== 'CUSTOM' && formFrequency !== 'PRN'} 
-                    defaultValue={editingMed?.intervalHours || (FREQUENCY_HOURS[formFrequency] || 0)} 
-                    className={INPUT_CLASS + " disabled:opacity-50"} 
-                    placeholder="e.g. 4" 
-                 />
-              </div>
             </div>
+            
+            <div className={(formFrequency === 'CUSTOM' || formFrequency === 'PRN') ? "block" : "hidden"}>
+               <label className={LABEL_CLASS}>Interval (Hours)</label>
+               <input 
+                  name="interval" 
+                  ref={intervalInputRef} 
+                  type="number" 
+                  defaultValue={editingMed?.intervalHours || (FREQUENCY_HOURS[formFrequency] || 0)} 
+                  className={INPUT_CLASS} 
+                  placeholder="e.g. 4" 
+               />
+            </div>
+
             <div>
                <label className={LABEL_CLASS}>Clinical Notes / Instructions</label>
                <textarea name="notes" defaultValue={editingMed?.notes} className={TEXTAREA_CLASS} placeholder="Check BP before dose, take with food..." />
@@ -1131,27 +1183,43 @@ export default function App() {
         </Modal>
 
         {/* Administration Log Modal */}
-        <Modal isOpen={!!loggingMed} onClose={() => setLoggingMed(null)} title="Log Clinical Event">
+        <Modal isOpen={!!loggingMed || !!editingLog} onClose={() => { setLoggingMed(null); setEditingLog(null); }} title={editingLog ? "Edit Clinical Event" : "Log Clinical Event"}>
           <form onSubmit={e => { 
             e.preventDefault(); 
             const fd = new FormData(e.currentTarget); 
-            handleManualLog(loggingMed!.id, fd.get('status') as LogStatus, Date.now(), fd.get('notes') as string); 
+            const timeStr = fd.get('timestamp') as string;
+            const timestamp = timeStr ? new Date(timeStr).getTime() : Date.now();
+            if (editingLog) {
+              handleEditLog(editingLog.id, fd.get('status') as LogStatus, timestamp, fd.get('notes') as string);
+            } else if (loggingMed) {
+              handleManualLog(loggingMed.id, fd.get('status') as LogStatus, timestamp, fd.get('notes') as string); 
+            }
           }} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label className="cursor-pointer group">
-                <input type="radio" name="status" value="SERVED" defaultChecked className="hidden peer" />
+                <input type="radio" name="status" value="SERVED" defaultChecked={!editingLog || editingLog.status === 'SERVED'} className="hidden peer" />
                 <div className="p-8 border-4 rounded-[2.5rem] transition-all peer-checked:border-teal-500 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 text-center font-black text-slate-900 dark:text-white text-lg shadow-sm peer-checked:shadow-xl">GIVEN</div>
               </label>
               <label className="cursor-pointer group">
-                <input type="radio" name="status" value="MISSED" className="hidden peer" />
+                <input type="radio" name="status" value="MISSED" defaultChecked={editingLog?.status === 'MISSED'} className="hidden peer" />
                 <div className="p-8 border-4 rounded-[2.5rem] transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-900/20 text-center font-black text-slate-900 dark:text-white text-lg shadow-sm peer-checked:shadow-xl">MISSED</div>
               </label>
             </div>
             <div>
-               <label className={LABEL_CLASS}>Clinical Observations / Comments</label>
-               <textarea name="notes" className={TEXTAREA_CLASS} placeholder="Patient tolerated well, vitals stable..." />
+              <label className={LABEL_CLASS}>Time Given</label>
+              <input type="datetime-local" name="timestamp" defaultValue={(() => {
+                const now = editingLog ? new Date(editingLog.servedAt) : new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                return now.toISOString().slice(0, 16);
+              })()} className={INPUT_CLASS} required />
             </div>
-            <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-[2rem] shadow-2xl active:scale-95 transition-all">Submit to Registry</button>
+            <div>
+               <label className={LABEL_CLASS}>Clinical Observations / Comments</label>
+               <textarea name="notes" defaultValue={editingLog?.notes} className={TEXTAREA_CLASS} placeholder="Patient tolerated well, vitals stable..." />
+            </div>
+            <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-[2rem] shadow-2xl active:scale-95 transition-all">
+              {editingLog ? "Save Changes" : "Submit to Registry"}
+            </button>
           </form>
         </Modal>
 
